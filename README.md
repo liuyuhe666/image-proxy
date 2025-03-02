@@ -11,6 +11,13 @@
 ```bash
 go run main.go
 ```
+
+`http://localhost:8888/?url=<图片URL>`
+
+示例：
+
+`http://localhost:8888/?url=https://i1.hdslb.com/bfs/archive/2a4374c3aab4e7c53e9f78c3dbdacfa3474f76b8.jpg`
+
 ## Reference
 
 - [https://images.weserv.nl](https://images.weserv.nl)
