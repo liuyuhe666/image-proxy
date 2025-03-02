@@ -5,7 +5,7 @@ RUN apk add --no-cache \
     make \
     gcc \
     libc-dev \
-    curl \
+    curl
 
 WORKDIR /root/image-proxy
 ENV CGO_ENABLED=0
