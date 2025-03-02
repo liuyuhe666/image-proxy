@@ -55,7 +55,7 @@ func handleImageProxyRequest(c echo.Context) error {
 	setHeader(req, parsedURL, c.RealIP())
 	resp, err := getHTTPClient().Do(req)
 	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
+		return handleFallback(c, targetURL)
 	}
 	defer func(Body io.ReadCloser) {
 		_ = Body.Close()
@@ -65,6 +65,31 @@ func handleImageProxyRequest(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "content-type is invalid")
 	}
 	c.Response().Header().Set("Content-Type", contentType)
+	c.Response().WriteHeader(resp.StatusCode)
+	_, err = io.Copy(c.Response().Writer, resp.Body)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+	return nil
+}
+
+// handleFallback use wsrv.nl as fallback
+func handleFallback(c echo.Context, originalURL string) error {
+	imageURL := fmt.Sprintf("https://images.weserv.nl/?url=%s", originalURL)
+	ctx, cancel := context.WithTimeout(c.Request().Context(), time.Second*30)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, "GET", imageURL, nil)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+	resp, err := getHTTPClient().Do(req)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
+	c.Response().Header().Set("Content-Type", resp.Header.Get("Content-Type"))
 	c.Response().WriteHeader(resp.StatusCode)
 	_, err = io.Copy(c.Response().Writer, resp.Body)
 	if err != nil {
